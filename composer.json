@@ -1,5 +1,6 @@
 {
     "require": {
-        "stichoza/google-translate-php": "~3.1"
+        "stichoza/google-translate-php": "~3.1",
+        "best/dot-notation": "dev-master"
     }
 }

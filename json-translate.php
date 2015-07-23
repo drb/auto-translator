@@ -3,8 +3,10 @@
 // setup composer
 require 'vendor/autoload.php';
 
-// import...
-use Stichoza\GoogleTranslate\TranslateClient;
+// imports...
+use Best\DotNotation;                               // https://github.com/dmeybohm/dot-notation
+use Stichoza\GoogleTranslate\TranslateClient;       // https://github.com/Stichoza/Google-Translate-PHP
+
 
 //base variables
 $template           = './template.json';            // the source file to get all translations from
@@ -28,11 +30,8 @@ if (sizeof($argv) > 1) {
     // locales to translate to -l
     $opts .= 'l:';
 
-    // expand namespaces
-    $opts .= 'e:';
-
-    // optional params (-p pretty print, -v verbose)
-    $opts .= 'pv';
+    // optional params (-p pretty print, -v verbose, -e expand namespaces)
+    $opts .= 'pve';
 
     // parse the options
     $options = getopt($opts);
@@ -47,12 +46,12 @@ if (sizeof($argv) > 1) {
         $targetLanguages = explode(',', $options['l']);
     }
 
-    // set the traget languages
+    // expand namespaces
     if (array_key_exists('e', $options)) {
         $expandNamespace = true;
     }
 
-    // set the target languages
+    // print output to console
     if (array_key_exists('v', $options)) {
         $verbose = true;
     }
@@ -64,6 +63,7 @@ if (!$seedLanguage) {
     exit(0);
 }
 
+// did any target languages get set?
 if (sizeof($targetLanguages) === 0) {
     print ("No target languages were defined");
     exit(0);
@@ -72,7 +72,6 @@ if (sizeof($targetLanguages) === 0) {
 // load the template data (the text strings in english/target language)
 $string = file_get_contents($template);
 $json   = json_decode($string, true);
-
 
 // only continue if the 
 if (array_key_exists($seedLanguage, $json)) {
@@ -92,11 +91,25 @@ if (array_key_exists($seedLanguage, $json)) {
 
         // hit each string
         foreach ($seedStrings as $key => $value) {
+
             try {
-                $json[$lang][$key] = "ass";//$tr->translate($value);    
+
+                // hit the api
+                $translated = $tr->translate($value);    
+
+                // re-assign the property value
+                $json[$lang][$key] = $translated;  
+                
             } catch (Exception $e) {
                 echo (sprintf('Failed to get translation: %s', $e->getMessage()));
             }
+        }
+    }
+
+    // expand the flat keys into sub arrays if required
+    if ($expandNamespace === true) {
+        foreach(array_merge(array($seedLanguage), $targetLanguages) as $lang) {
+            $json[$lang] = DotNotation::expand($json[$lang]);
         }
     }
 }
