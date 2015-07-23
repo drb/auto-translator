@@ -88,10 +88,13 @@ Becomes...
 ### Options
 
 ```
+-i          Input file (JSON).
+-o          Output file path.
 -s          Source language (using 2 letter ISO_639-1 code).
 -l          Target languages. Specify multiple by separating with commas.
 -v          Verbose mode (prints output to screen).
 -e          Expand namespaces to nested objects.
+-p          Pretty-print the JSON output (for readability).
 ```
 
 ### Installation:
@@ -99,9 +102,9 @@ Becomes...
 * Clone the repo out
 * Run `composer install`
 * Define your keys that require translation in template.json
-* Set target languages in json-translate.php
-* Run `php json-translate.php -s en -l fr,de,es -v`
+* Run `php json-translate.php -i <source.json> -o <output.json> -s <source language> -l <target languages> -v`
+* e.g. `php json-translate.php -i template.json -o output.json -s en -l fr,de -v`
 
-The output is written to `output.json`.
+The input is taken from template.json, the English strings are translated to French and German, then the output is written to `output.json`.
 
 
