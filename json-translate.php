@@ -1,5 +1,9 @@
 <?php
 
+// the source documents can get a bit big, so we allow a property _comment to comment the structure
+// but we don't want this in the output, so they are removed.
+define ('JSON_COMMENT', '_comment');
+
 // setup composer
 require 'vendor/autoload.php';
 
@@ -7,17 +11,17 @@ require 'vendor/autoload.php';
 use Best\DotNotation;                               // https://github.com/dmeybohm/dot-notation
 use Stichoza\GoogleTranslate\TranslateClient;       // https://github.com/Stichoza/Google-Translate-PHP
 
-
 //base variables
 $template           = false;                        // the source file to get all translations from
 $output             = false;                        // the output file once all translations are done
-$seedLanguage       = false;                        // the seed language
-$targetLanguages    = false;                        // the languages we need
+$seedLanguage       = false;                        // the seed language denoted by two-character ISO 3166-1 alpha-2 code
+$targetLanguages    = false;                        // the languages we need denoted by two-character ISO 3166-1 alpha-2 codes (split by commas)
 $options            = false; 
 
-$expandNamespace    = false;
-$verbose            = false; 
-$jsonOutput         = null; 
+$expandNamespace    = false;                        // creates nested objects in the JSON, using dot syntax to denote nesting
+$verbose            = false;                        // print the output to the console
+$stripComments      = true;                         // remove any custom comments from the source file (default is on)
+$jsonOutput         = null;                         // the output
 
 // cli options
 if (sizeof($argv) > 1) {
@@ -38,7 +42,7 @@ if (sizeof($argv) > 1) {
     $opts .= 'o:';
 
     // optional params (-p pretty print, -v verbose, -e expand namespaces)
-    $opts .= 'pve';
+    $opts .= 'pvec';
 
     // parse the options
     $options = getopt($opts);
@@ -77,11 +81,21 @@ if (sizeof($argv) > 1) {
     if (array_key_exists('p', $options)) {
         $jsonOutput = JSON_PRETTY_PRINT;
     }
+
+    // keep comments
+    if (array_key_exists('c', $options)) {
+        $stripComments = false;
+    }
 }
 
 // check in/out params
 if (!$template || !$output) {
     print ("\nYou need to define an input and output file.\n");
+    exit(0);
+}
+
+if ($template === $output) {
+    print ("\nOutput is the same file as input - this is a bad idea.\n");
     exit(0);
 }
 
@@ -92,17 +106,42 @@ if (!$seedLanguage) {
 }
 
 // did any target languages get set?
-if (sizeof($targetLanguages) === 0) {
+if (!$targetLanguages || sizeof($targetLanguages) === 0) {
     print ("\nNo target languages were defined.\n");
     exit(0);
 }
 
+// check the source template exists
+if (!file_exists($template)) {
+    print ("\nSource file does not exist\n");
+    exit(0);   
+}
+
 // load the template data (the text strings in the target language)
 $string = file_get_contents($template);
+
+// parse the json
 $json   = json_decode($string, true);
+
+// trap error when parsing the json
+switch (json_last_error()) {
+    case JSON_ERROR_DEPTH:
+    case JSON_ERROR_STATE_MISMATCH:
+    case JSON_ERROR_CTRL_CHAR:
+    case JSON_ERROR_SYNTAX:
+    case JSON_ERROR_UTF8:
+        print(sprintf('Cannot load target JSON document: %s%s', json_last_error_msg(), "\n"));
+        exit(0);
+    break;
+}
 
 // only continue if the seed langauge exists
 if (array_key_exists($seedLanguage, $json)) {
+
+    // remove the temporary _comments properties if they exist - we don't need these translating
+    if (array_key_exists(JSON_COMMENT, $json[$seedLanguage]) && $stripComments) {
+        unset($json[$seedLanguage][JSON_COMMENT]);
+    }
 
     // get the strings in the source language we want to translate
     $seedStrings = $json[$seedLanguage];
@@ -126,7 +165,8 @@ if (array_key_exists($seedLanguage, $json)) {
                 $translated = $tr->translate($value);    
 
                 // re-assign the property value
-                $json[$lang][$key] = $translated;  
+                $json[$lang][$key] = $translated;
+                
             } catch (Exception $e) {
                 echo (sprintf('Failed to get translation: %s', $e->getMessage()));
             }
