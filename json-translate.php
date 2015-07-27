@@ -4,6 +4,9 @@
 // but we don't want this in the output, so they are removed.
 define ('JSON_COMMENT', '_comment');
 
+//
+mb_internal_encoding("UTF-8");
+
 // setup composer
 require 'vendor/autoload.php';
 
@@ -161,8 +164,18 @@ if (array_key_exists($seedLanguage, $json)) {
         foreach ($seedStrings as $key => $value) {
 
             try {
-                // hit the api
-                $translated = $tr->translate($value);    
+
+                // test that the string should be translated - we can prevent strings from being 
+                // converted by preceding the original value with a dollar sign i.e. "foo": "$I should not be translated"
+                if (preg_match('#^\$#i', $value) === 1) {
+
+                    // just use the original string (don't translate)
+                    $translated = mb_substr($value, 1, mb_strlen($value), "UTF-8");
+                } else {
+
+                    // hit the api - the string should be translated
+                    $translated = $tr->translate($value);    
+                }
 
                 // re-assign the property value
                 $json[$lang][$key] = $translated;
