@@ -9,6 +9,8 @@ The source strings are placed in a new JSON object using the target language sho
 ```
 {
     "en": {
+        "_comment": "This is a comment and won't be in the output",
+        
         "test.foo": "Hello my name is John. I like to play tennis on grass.",
         "test.bar": "The man inside the moon does not like cheese.",
         "test.baz": "America is a country with a very large land mass.",
@@ -95,6 +97,7 @@ Becomes...
 -v          Verbose mode (prints output to screen).
 -e          Expand namespaces to nested objects.
 -p          Pretty-print the JSON output (for readability).
+-c          Don't remove _comment properties from the source data.
 ```
 
 ### Installation:
