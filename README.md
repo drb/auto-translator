@@ -6,7 +6,7 @@ The source strings are placed in a new JSON object using the target language sho
 
 ## Example - this source file in English
 
-```
+```json
 {
     "en": {
         "_comment": "This is a comment and won't be in the output",
@@ -21,7 +21,7 @@ The source strings are placed in a new JSON object using the target language sho
 
 Becomes...
 
-```
+```json
 {
     "en": {
         "test.foo": "Hello my name is John. I like to play tennis on grass.",
@@ -46,7 +46,7 @@ Becomes...
 
 ### With expanded namespaces:
 
-```
+```json
 {
     "en": {
         "test": {
