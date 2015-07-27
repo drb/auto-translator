@@ -87,6 +87,20 @@ Becomes...
 }
 ```
 
+### Ignored values
+
+In some instances, it may be preferable to retain the original language string instead of attempting a translation - for example, a trademark or company name. 
+
+Strings that should not be translated can be marked by prefixing the value with a dollar ($) sign.
+
+```json
+{   
+    "en": {
+        "companyName": "$Orange Computers" 
+    }
+}
+```
+
 ### Options
 
 ```
