@@ -24,7 +24,9 @@ $options            = false;
 $expandNamespace    = false;                        // creates nested objects in the JSON, using dot syntax to denote nesting
 $verbose            = false;                        // print the output to the console
 $stripComments      = true;                         // remove any custom comments from the source file (default is on)
-$jsonOutput         = null;                         // the output
+
+$jsonOutput         = array();                      // the output
+$jsonOutputProps    = null;                         // the output properties
 
 // cli options
 if (sizeof($argv) > 1) {
@@ -82,7 +84,7 @@ if (sizeof($argv) > 1) {
 
     // pretty print the json
     if (array_key_exists('p', $options)) {
-        $jsonOutput = JSON_PRETTY_PRINT;
+        $jsonOutputProps = JSON_PRETTY_PRINT;
     }
 
     // keep comments
@@ -149,6 +151,9 @@ if (array_key_exists($seedLanguage, $json)) {
     // get the strings in the source language we want to translate
     $seedStrings = $json[$seedLanguage];
 
+    // // place the target strings into the output object
+    array_unshift($targetLanguages, $seedLanguage);
+
     // loop over each target language, hit the translation API
     foreach ($targetLanguages as $lang) {
 
@@ -156,29 +161,40 @@ if (array_key_exists($seedLanguage, $json)) {
         $tr = new TranslateClient($seedLanguage, $lang);
 
         // create a new object if it's not there already
-        if (!array_key_exists($lang, $json)) {
-            $json[$lang] = array();    
+        if (!array_key_exists($lang, $jsonOutput)) {
+            $jsonOutput[$lang] = array();    
         }
 
         // hit each string
-        foreach ($seedStrings as $key => $value) {
+        foreach ($seedStrings as $key=>$value) {
+
+            $stringKey = $key;
 
             try {
 
                 // test that the string should be translated - we can prevent strings from being 
                 // converted by preceding the original value with a dollar sign i.e. "foo": "$I should not be translated"
-                if (preg_match('#^\$#i', $value) === 1) {
+                if (preg_match('#^\$#i', $key) === 1) {
 
                     // just use the original string (don't translate)
-                    $translated = mb_substr($value, 1, mb_strlen($value), "UTF-8");
+                    $translated = $value;
+
+                    // remove the dollar key
+                    $stringKey = mb_substr($key, 1, mb_strlen($key), "UTF-8");
+
                 } else {
 
-                    // hit the api - the string should be translated
-                    $translated = $tr->translate($value);    
+                    // if the target language is the same as the translation language, simply write it back into the object
+                    if ($seedLanguage === $lang) {
+                        $translated = $value;
+                    } else {
+                        // hit the api - the string should be translated
+                        $translated = $tr->translate($value);        
+                    }
                 }
 
                 // re-assign the property value
-                $json[$lang][$key] = $translated;
+                $jsonOutput[$lang][$stringKey] = $translated;
                 
             } catch (Exception $e) {
                 echo (sprintf('Failed to get translation: %s', $e->getMessage()));
@@ -189,7 +205,7 @@ if (array_key_exists($seedLanguage, $json)) {
     // expand the flat keys into sub arrays if required
     if ($expandNamespace === true) {
         foreach(array_merge(array($seedLanguage), $targetLanguages) as $lang) {
-            $json[$lang] = DotNotation::expand($json[$lang]);
+            $jsonOutput[$lang] = DotNotation::expand($jsonOutput[$lang]);
         }
     }
 } else {
@@ -200,7 +216,7 @@ if (array_key_exists($seedLanguage, $json)) {
 // write the translated JSON back to disk
 try {
     $fp = fopen($output, 'w');
-    fwrite($fp, json_encode($json, $jsonOutput));
+    fwrite($fp, json_encode($jsonOutput, $jsonOutputProps));
     fclose($fp);
 } catch (Exception $e) {
     echo (sprintf('\nError writing output file %s. Error found: %s', $output, $e->getMessage()));
@@ -208,6 +224,6 @@ try {
 
 // output to console if verbose flag is set
 if ($verbose) {
-    print_r($json);    
+    print_r($jsonOutput);    
 }
 ?>
