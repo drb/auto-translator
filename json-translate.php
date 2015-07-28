@@ -4,7 +4,7 @@
 // but we don't want this in the output, so they are removed.
 define ('JSON_COMMENT', '_comment');
 
-//
+// set encoding type to utf-8 by default
 mb_internal_encoding("UTF-8");
 
 // setup composer
@@ -19,11 +19,12 @@ $template           = false;                        // the source file to get al
 $output             = false;                        // the output file once all translations are done
 $seedLanguage       = false;                        // the seed language denoted by two-character ISO 3166-1 alpha-2 code
 $targetLanguages    = false;                        // the languages we need denoted by two-character ISO 3166-1 alpha-2 codes (split by commas)
-$options            = false; 
+$options            = false;                        // parsed options coming from the CLI
 
 $expandNamespace    = false;                        // creates nested objects in the JSON, using dot syntax to denote nesting
 $verbose            = false;                        // print the output to the console
 $stripComments      = true;                         // remove any custom comments from the source file (default is on)
+$enforceUpperFirst  = true;                         // attempt to enforce upper case letters first when the original text has upper
 
 $jsonOutput         = array();                      // the output
 $jsonOutputProps    = null;                         // the output properties
@@ -188,8 +189,21 @@ if (array_key_exists($seedLanguage, $json)) {
                     if ($seedLanguage === $lang) {
                         $translated = $value;
                     } else {
+
                         // hit the api - the string should be translated
-                        $translated = $tr->translate($value);        
+                        $translated = $tr->translate($value);
+
+                        // ensure that the translated string observes the source string's capitalisation,
+                        // if that is the case
+                        if ($enforceUpperFirst) {
+
+                            // is the source string's first character upper case?
+                            if (preg_match('#^\p{Lu}#u', $value)) {
+                                // ensure the output is upper too
+                                $fc = mb_strtoupper(mb_substr($translated, 0, 1));
+                                $translated = $fc.mb_substr($translated, 1);
+                            }
+                        }
                     }
                 }
 
