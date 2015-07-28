@@ -156,7 +156,7 @@ List mirrored from the official [Google Translate API Docs](https://cloud.google
 | German | de |
 | Greek |el |
 | Gujarati | gu |
-| Haitian Creole  ht |
+| Haitian Creole |  ht |
 | Hebrew | iw |
 | Hindi |hi |
 | Hungarian |hu |
