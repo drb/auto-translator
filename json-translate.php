@@ -3,12 +3,16 @@
 // the source documents can get a bit big, so we allow a property _comment to comment the structure
 // but we don't want this in the output, so they are removed.
 define ('JSON_COMMENT', '_comment');
+define ('INI_PATH',     'creds.ini');
 
 // set encoding type to utf-8 by default
 mb_internal_encoding("UTF-8");
 
 // setup composer
 require 'vendor/autoload.php';
+
+// google api abstract
+require('libs/api.translate.php');
 
 // imports...
 use Best\DotNotation;                               // https://github.com/dmeybohm/dot-notation
@@ -25,6 +29,8 @@ $expandNamespace    = false;                        // creates nested objects in
 $verbose            = false;                        // print the output to the console
 $stripComments      = true;                         // remove any custom comments from the source file (default is on)
 $enforceUpperFirst  = true;                         // attempt to enforce upper case letters first when the original text has upper
+$authEnabled        = false;                        // uses the google translate API directly using a real API key - key needs to bet set in file creds.ini 
+$authCredentials    = false;                        // if auth is enabled, the api key is held here
 
 $jsonOutput         = array();                      // the output
 $jsonOutputProps    = null;                         // the output properties
@@ -48,7 +54,7 @@ if (sizeof($argv) > 1) {
     $opts .= 'o:';
 
     // optional params (-p pretty print, -v verbose, -e expand namespaces)
-    $opts .= 'pvec';
+    $opts .= 'pveca';
 
     // parse the options
     $options = getopt($opts);
@@ -92,35 +98,60 @@ if (sizeof($argv) > 1) {
     if (array_key_exists('c', $options)) {
         $stripComments = false;
     }
+
+    //
+    if (array_key_exists('a', $options)) {
+        $authEnabled = true;
+    }
 }
 
 // check in/out params
 if (!$template || !$output) {
-    print ("\nYou need to define an input and output file.\n");
+    print ("You need to define an input and output file.\n");
     exit(0);
 }
 
 if ($template === $output) {
-    print ("\nOutput is the same file as input - this is a bad idea.\n");
+    print ("Output is the same file as input - this is a bad idea.\n");
     exit(0);
 }
 
 // check params
 if (!$seedLanguage) {
-    print ("\nNo seed language was defined.\n");
+    print ("No seed language was defined.\n");
     exit(0);
 }
 
 // did any target languages get set?
 if (!$targetLanguages || sizeof($targetLanguages) === 0) {
-    print ("\nNo target languages were defined.\n");
+    print ("No target languages were defined.\n");
     exit(0);
 }
 
 // check the source template exists
 if (!file_exists($template)) {
-    print ("\nSource file does not exist\n");
+    print ("Source file does not exist\n");
     exit(0);   
+}
+
+// auth has been requested 
+if ($authEnabled) {
+    
+    if (file_exists(INI_PATH)) {
+        // parse the config file
+        $authCredentials = parse_ini_file(INI_PATH, true);
+
+        if (array_key_exists('google_api', $authCredentials) && array_key_exists('key', $authCredentials['google_api'])) {
+            // all good
+        } else {
+            print (sprintf("Key is missing from %s\n", INI_PATH));
+            exit(0);    
+        }
+
+    } else {
+        print (sprintf("Auth parameter was passed but there is no %s file", INI_PATH));
+        exit(0);
+    }
 }
 
 // load the template data (the text strings in the target language)
@@ -159,7 +190,16 @@ if (array_key_exists($seedLanguage, $json)) {
     foreach ($targetLanguages as $lang) {
 
         // setup api
-        $tr = new TranslateClient($seedLanguage, $lang);
+        if (!$authEnabled) {
+
+            // use api via backdoor
+            $tr = new TranslateClient($seedLanguage, $lang);    
+        } else {
+
+            // use offical api with keys
+            $tr = new GoogleTranslateClient($authCredentials['google_api']['key'], $seedLanguage, $lang);
+        }
+        
 
         // create a new object if it's not there already
         if (!array_key_exists($lang, $jsonOutput)) {
@@ -174,7 +214,7 @@ if (array_key_exists($seedLanguage, $json)) {
             try {
 
                 // test that the string should be translated - we can prevent strings from being 
-                // converted by preceding the original value with a dollar sign i.e. "foo": "$I should not be translated"
+                // converted by preceding the key with a dollar sign i.e. "$foo": "I should not be translated"
                 if (preg_match('#^\$#i', $key) === 1) {
 
                     // just use the original string (don't translate)
@@ -198,7 +238,7 @@ if (array_key_exists($seedLanguage, $json)) {
                         if ($enforceUpperFirst) {
 
                             // is the source string's first character upper case?
-                            if (preg_match('#^\p{Lu}#u', $value)) {
+                            if ($value && preg_match('#^\p{Lu}#u', $value)) {
                                 // ensure the output is upper too
                                 $fc = mb_strtoupper(mb_substr($translated, 0, 1));
                                 $translated = $fc.mb_substr($translated, 1);
@@ -223,7 +263,7 @@ if (array_key_exists($seedLanguage, $json)) {
         }
     }
 } else {
-    print(sprintf("\nThere is no key set for %s in the source JSON.\n", $seedLanguage));
+    print(sprintf("There is no key set for %s in the source JSON.\n", $seedLanguage));
     exit(0);
 }
 
