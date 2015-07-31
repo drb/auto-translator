@@ -1,6 +1,6 @@
 # Auto translator
 
-Simple utility to take a dictionary of strings in language X, and translate them to language(s) Y, Z.
+Simple utility to take a dictionary of strings in language X, and translate them to language(s) Y, Z using Google's Translate APIs (un-authed mode is available).
 
 The source strings are placed in a new JSON object using the target language shortcode as the key.
 
@@ -112,6 +112,7 @@ Strings that should not be translated can be marked by prefixing the key with a 
 -e          Expand namespaces to nested objects.
 -p          Pretty-print the JSON output (for readability).
 -c          Don't remove _comment properties from the source data.
+-a          Use the Google Translate API with an active key (requires [credentials setting up](#credentials))
 ```
 
 ### Installation:
@@ -123,5 +124,20 @@ Strings that should not be translated can be marked by prefixing the key with a 
 * e.g. `php json-translate.php -i template.json -o output.json -s en -l fr,de -v`
 
 The input is taken from template.json, the English strings are translated to French and German, then the output is written to `output.json`.
+
+### Credentials
+
+If the -a flag is passed, the script will use Google's offical API endpoint. This requires an active, valid API key to work.
+
+* Create an account with Google on the Google Cloud Platform and enable the Translate API
+* Create and keep note of an API key
+* Create file in the same directory as the cloned out project called `creds.ini`
+* Add the following to the file:
+
+```
+[google_api]
+key = YOUR_KEY_HERE
+```
+
 
 
