@@ -87,7 +87,7 @@ Becomes...
 }
 ```
 
-### Ignored values
+### Ignored values (whole key)
 
 In some instances, it may be preferable to retain the original language string instead of attempting a translation - for example, a trademark or company name. 
 
@@ -100,6 +100,21 @@ Strings that should not be translated can be marked by prefixing the key with a 
     }
 }
 ```
+
+### Ignored values (inline strings)
+
+There may be cases where a string needs to be translated that contains a keyword that cannot be translated. Wrapping these with dollar-brackets will prevent the string from being translated e.g `$(don't translate me)`. This retains the context of the un translated keywords in the translated output.
+
+Strings that should not be translated can be marked by wrapping parts of the value with brackets, prefixed with a dollar ($) sign.
+
+```json
+{   
+    "en": {
+        "partiallyTranslatedString": "I work for $(Orange Computers)" 
+    }
+}
+```
+
 
 ### Options
 
