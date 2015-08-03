@@ -9,10 +9,11 @@ define ('INI_PATH',     'creds.ini');
 mb_internal_encoding("UTF-8");
 
 // setup composer
-require 'vendor/autoload.php';
+require_once 'vendor/autoload.php';
 
 // google api abstract
-require('libs/api.translate.php');
+require_once('libs/api.translate.php');
+require_once('libs/api.utils.php');
 
 // imports...
 use Best\DotNotation;                               // https://github.com/dmeybohm/dot-notation
@@ -177,13 +178,15 @@ if (array_key_exists($seedLanguage, $json)) {
 
     // remove the temporary _comments properties if they exist - we don't need these translating
     if (array_key_exists(JSON_COMMENT, $json[$seedLanguage]) && $stripComments) {
+
+        // remove the comments
         unset($json[$seedLanguage][JSON_COMMENT]);
     }
 
     // get the strings in the source language we want to translate
     $seedStrings = $json[$seedLanguage];
 
-    // // place the target strings into the output object
+    // place the target strings into the output object
     array_unshift($targetLanguages, $seedLanguage);
 
     // loop over each target language, hit the translation API
@@ -193,14 +196,18 @@ if (array_key_exists($seedLanguage, $json)) {
         if (!$authEnabled) {
 
             // use api via backdoor
-            $tr = new TranslateClient($seedLanguage, $lang);    
+            $tr = new TranslateClient($seedLanguage, $lang);
+
         } else {
 
             // use offical api with keys
-            $tr = new GoogleTranslateClient($authCredentials['google_api']['key'], $seedLanguage, $lang);
+            $tr = new GoogleTranslateClient(
+                $authCredentials['google_api']['key'],
+                $seedLanguage,
+                $lang
+            );
         }
         
-
         // create a new object if it's not there already
         if (!array_key_exists($lang, $jsonOutput)) {
             $jsonOutput[$lang] = array();    
@@ -209,11 +216,12 @@ if (array_key_exists($seedLanguage, $json)) {
         // hit each string
         foreach ($seedStrings as $key=>$value) {
 
+            // 
             $stringKey = $key;
 
             try {
 
-                // test that the string should be translated - we can prevent strings from being 
+                // test that the string should be translated - we can prevent entire strings from being 
                 // converted by preceding the key with a dollar sign i.e. "$foo": "I should not be translated"
                 if (preg_match('#^\$#i', $key) === 1) {
 
@@ -227,7 +235,9 @@ if (array_key_exists($seedLanguage, $json)) {
 
                     // if the target language is the same as the translation language, simply write it back into the object
                     if ($seedLanguage === $lang) {
-                        $translated = $value;
+
+                        $translated = strip_tags(Utils::isolateIgnored($value));
+                        
                     } else {
 
                         // hit the api - the string should be translated
@@ -239,6 +249,7 @@ if (array_key_exists($seedLanguage, $json)) {
 
                             // is the source string's first character upper case?
                             if ($value && preg_match('#^\p{Lu}#u', $value)) {
+
                                 // ensure the output is upper too
                                 $fc = mb_strtoupper(mb_substr($translated, 0, 1));
                                 $translated = $fc.mb_substr($translated, 1);
@@ -249,7 +260,8 @@ if (array_key_exists($seedLanguage, $json)) {
 
                 // re-assign the property value
                 $jsonOutput[$lang][$stringKey] = $translated;
-                
+            
+            //
             } catch (Exception $e) {
                 echo (sprintf('Failed to get translation: %s', $e->getMessage()));
             }
@@ -258,10 +270,15 @@ if (array_key_exists($seedLanguage, $json)) {
 
     // expand the flat keys into sub arrays if required
     if ($expandNamespace === true) {
+
+        // hit each item and expand them
         foreach(array_merge(array($seedLanguage), $targetLanguages) as $lang) {
             $jsonOutput[$lang] = DotNotation::expand($jsonOutput[$lang]);
         }
     }
+
+
+
 } else {
     print(sprintf("There is no key set for %s in the source JSON.\n", $seedLanguage));
     exit(0);
@@ -278,6 +295,6 @@ try {
 
 // output to console if verbose flag is set
 if ($verbose) {
-    print_r($jsonOutput);    
+   print_r($jsonOutput);    
 }
 ?>
