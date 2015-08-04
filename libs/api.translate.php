@@ -13,6 +13,7 @@ class GoogleTranslateClient {
     private $source;
     private $target;
     private $key;
+    private $preferredEncoding = 'utf-8';  
 
 
     /**
@@ -59,7 +60,7 @@ class GoogleTranslateClient {
             'source' => $this->source,
             'target' => $this->target,
             'key' => $this->key,
-            'format' => 'html'
+            'format' => 'text'
         );
 
         $curl = curl_init();
@@ -72,6 +73,14 @@ class GoogleTranslateClient {
 
         // ok response
         if ($status == 200) {
+
+            // detect the inbound encoding
+            $encoding = mb_detect_encoding($translated);
+
+            // if encoding is not utf, make it so
+            if (strtolower($encoding) != $this->preferredEncoding) {
+                $translated = iconv($encoding, $this->preferredEncoding, $translated);
+            }
 
             // decode the json
             $translated = json_decode($translated, true);
