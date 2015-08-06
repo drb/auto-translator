@@ -2,8 +2,10 @@
 
 // the source documents can get a bit big, so we allow a property _comment to comment the structure
 // but we don't want this in the output, so they are removed.
-define ('JSON_COMMENT', '_comment');
-define ('INI_PATH',     'creds.ini');
+define ('JSON_COMMENT',     '_comment');
+define ('JSON_INCLUDE',     '_include');
+define ('INI_PATH',         'creds.ini');
+define ('INCLUDES_PATH',    'includes/');
 
 // set encoding type to utf-8 by default
 mb_internal_encoding("UTF-8");
@@ -158,6 +160,43 @@ if ($authEnabled) {
 // load the template data (the text strings in the target language)
 $string = file_get_contents($template);
 
+// locate any includes
+preg_match_all('/\"_include\"\: \"(.*)\"/', $string, $includes, PREG_SET_ORDER);
+
+// were any includes found?
+if (sizeof($includes) > 0) {
+
+    $dir = pathinfo($template)['dirname'];
+
+    // loop the found includes
+    foreach($includes as $include) {
+
+        $pathInfo = pathinfo($template);
+
+        // path to file
+        $markup = $include[0];
+        $path   = $include[1];
+
+        $path = $pathInfo['dirname'] . '/' . INCLUDES_PATH . $path;
+
+        // does it exist?
+        if (file_exists($path)) {
+            // put it on the output
+            $includeContent = file_get_contents($path);
+
+            // de-json the content (we only want the keys)
+            $includeContent = trim($includeContent, "{}");
+
+            // update the base content with the content from the include
+            $string = str_replace($markup, $includeContent, $string);
+        } else {
+
+            // throw exception when the include is missing
+            throw new Exception(sprintf("Missing include file found at %s", $path));
+        }
+    }
+}
+
 // parse the json
 $json   = json_decode($string, true);
 
@@ -173,8 +212,16 @@ switch (json_last_error()) {
     break;
 }
 
+
 // only continue if the seed langauge exists
 if (array_key_exists($seedLanguage, $json)) {
+
+    // remove the include tag
+    if (array_key_exists(JSON_INCLUDE, $json[$seedLanguage])) {
+
+        // remove the include
+        unset($json[$seedLanguage][JSON_INCLUDE]);
+    }
 
     // remove the temporary _comments properties if they exist - we don't need these translating
     if (array_key_exists(JSON_COMMENT, $json[$seedLanguage]) && $stripComments) {
