@@ -115,6 +115,20 @@ Strings that should not be translated can be marked by wrapping parts of the val
 }
 ```
 
+### Includes
+
+To make organising the files easier and more readable, the source document supports imports from external sources.
+
+Put any includes in the `includes` directory (you will have to create this), then import them by using the `_include` directive:
+
+```json
+{
+    "en": {
+        "_include": "path/to/include/file.template"
+    }
+}
+```
+
 
 ### Options
 
