@@ -141,6 +141,7 @@ if (!file_exists($template)) {
 if ($authEnabled) {
     
     if (file_exists(INI_PATH)) {
+
         // parse the config file
         $authCredentials = parse_ini_file(INI_PATH, true);
 
@@ -161,7 +162,7 @@ if ($authEnabled) {
 $string = file_get_contents($template);
 
 // locate any includes
-preg_match_all('/\"_include\"\: \"(.*)\"/', $string, $includes, PREG_SET_ORDER);
+preg_match_all('/\"_include\"\:([ ]+)\"(.*)\"/', $string, $includes, PREG_SET_ORDER);
 
 // were any includes found?
 if (sizeof($includes) > 0) {
@@ -171,6 +172,10 @@ if (sizeof($includes) > 0) {
     // loop the found includes
     foreach($includes as $include) {
 
+        // remove falsy values from the array
+        $include = array_values(array_filter($include, 'trim'));
+
+        // grab the directory context of the the source docs
         $pathInfo = pathinfo($template);
 
         // path to file
@@ -195,6 +200,8 @@ if (sizeof($includes) > 0) {
             throw new Exception(sprintf("Missing include file found at %s", $path));
         }
     }
+} else {
+    echo "string";
 }
 
 // parse the json
