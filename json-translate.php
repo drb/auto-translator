@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * Needs a mega re-factor to make this code maintainable and unit testable.
+ * The project started as a tiny procedural script & quickly got big!
+ */
+
 // the source documents can get a bit big, so we allow a property _comment to comment the structure
 // but we don't want this in the output, so they are removed.
 define ('JSON_COMMENT',     '_comment');
@@ -200,9 +205,19 @@ if (sizeof($includes) > 0) {
             throw new Exception(sprintf("Missing include file found at %s", $path));
         }
     }
-} else {
-    echo "string";
 }
+
+// normalise the string after injecting any includes
+$string = str_replace(array("\r", "\n"), "", $string);
+
+// remove all none single spaces
+$string = preg_replace('!\s+!', ' ', $string);
+
+// remove all accidental double commas
+$string = preg_replace("/([!?,.])+/", "\\1", $string);
+
+// relpace any lines terminated with commas when the property is the last one in the object
+$string = str_replace(", }", " }", $string);
 
 // parse the json
 $json   = json_decode($string, true);
