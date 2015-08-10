@@ -43,6 +43,8 @@ $authCredentials    = false;                        // if auth is enabled, the a
 $jsonOutput         = array();                      // the output
 $jsonOutputProps    = null;                         // the output properties
 
+$timeStart         = microtime(true); 
+
 // cli options
 if (sizeof($argv) > 1) {
 
@@ -335,6 +337,11 @@ if (array_key_exists($seedLanguage, $json)) {
                 echo (sprintf('Failed to get translation: %s', $e->getMessage()));
             }
         }
+
+        if ($verbose) {
+            print(sprintf("Finished converting [%s resources] %s > %s\n", sizeof($seedStrings), strtoupper($seedLanguage), strtoupper($lang)));
+        }
+
     }
 
     // expand the flat keys into sub arrays if required
@@ -345,7 +352,6 @@ if (array_key_exists($seedLanguage, $json)) {
             $jsonOutput[$lang] = DotNotation::expand($jsonOutput[$lang]);
         }
     }
-
 
 
 } else {
@@ -359,11 +365,11 @@ try {
     fwrite($fp, json_encode($jsonOutput, $jsonOutputProps));
     fclose($fp);
 } catch (Exception $e) {
-    echo (sprintf('\nError writing output file %s. Error found: %s', $output, $e->getMessage()));
+    echo (sprintf('Error writing output file %s. Error found: %s', $output, $e->getMessage()));
 }
 
 // output to console if verbose flag is set
 if ($verbose) {
-   print_r($jsonOutput);    
+    print(sprintf("\nTook %s seconds\n", round(microtime(true) - $timeStart, 2)));
 }
 ?>
