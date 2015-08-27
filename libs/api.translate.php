@@ -48,6 +48,18 @@ class GoogleTranslateClient {
 
 
     /**
+     * removes markup and whitespace from the translated string
+     * 
+     * @param  [type] $string [description]
+     * @return [type]         [description]
+     */
+    private function processString ($string) {
+
+        return trim(strip_tags($string));
+    }
+
+
+    /**
      * calls the api 
      * 
      * @param  [type] $string [description]
@@ -88,17 +100,17 @@ class GoogleTranslateClient {
             // get the goods
             $translated = $translated['data']['translations'][0]['translatedText'];
 
-            // remove any markup (notranslate spans in particular)
-            $translated = strip_tags($translated);
-
         } else {
 
             // fail
-            var_dump($translated);
-            return $string;
+            //var_dump($translated);
+            print (sprintf("[error][%s > %s][%s] %s", $this->source, $this->target, $status, $translated));
+
+            // return the original string
+            $translated = $string;
         }
 
-        return $translated;
+        return $this->processString($translated);
     }
 }
 ?>

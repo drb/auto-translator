@@ -39,6 +39,7 @@ $stripComments      = true;                         // remove any custom comment
 $enforceUpperFirst  = true;                         // attempt to enforce upper case letters first when the original text has upper
 $authEnabled        = false;                        // uses the google translate API directly using a real API key - key needs to bet set in file creds.ini 
 $authCredentials    = false;                        // if auth is enabled, the api key is held here
+$appendOnly         = false;                        // only add new keys 
 
 $jsonOutput         = array();                      // the output
 $jsonOutputProps    = null;                         // the output properties
@@ -64,7 +65,7 @@ if (sizeof($argv) > 1) {
     $opts .= 'o:';
 
     // optional params (-p pretty print, -v verbose, -e expand namespaces)
-    $opts .= 'pveca';
+    $opts .= 'pvecau';
 
     // parse the options
     $options = getopt($opts);
@@ -112,6 +113,10 @@ if (sizeof($argv) > 1) {
     //
     if (array_key_exists('a', $options)) {
         $authEnabled = true;
+    }
+
+    if (array_key_exists('u', $options)) {
+        $appendOnly = true;
     }
 }
 
@@ -216,9 +221,9 @@ $string = str_replace(array("\r", "\n"), "", $string);
 $string = preg_replace('!\s+!', ' ', $string);
 
 // remove all accidental double commas
-$string = preg_replace("/([!?,.])+/", "\\1", $string);
+$string = preg_replace("/([,])+/", "\\1", $string);
 
-// relpace any lines terminated with commas when the property is the last one in the object
+// replace any lines terminated with commas when the property is the last one in the object
 $string = str_replace(", }", " }", $string);
 
 // parse the json
@@ -235,7 +240,6 @@ switch (json_last_error()) {
         exit(0);
     break;
 }
-
 
 // only continue if the seed langauge exists
 if (array_key_exists($seedLanguage, $json)) {
