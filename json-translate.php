@@ -30,9 +30,10 @@ use Stichoza\GoogleTranslate\TranslateClient;       // https://github.com/Sticho
 $template           = false;                        // the source file to get all translations from
 $output             = false;                        // the output file once all translations are done
 $seedLanguage       = false;                        // the seed language denoted by two-character ISO 3166-1 alpha-2 code
-$targetLanguages    = false;                        // the languages we need denoted by two-character ISO 3166-1 alpha-2 codes (split by commas)
+$targetLanguages    = array();                      // the languages we need denoted by two-character ISO 3166-1 alpha-2 codes (split by commas)
 $options            = false;                        // parsed options coming from the CLI
 
+// cli options
 $expandNamespace    = false;                        // creates nested objects in the JSON, using dot syntax to denote nesting
 $verbose            = false;                        // print the output to the console
 $stripComments      = true;                         // remove any custom comments from the source file (default is on)
@@ -41,10 +42,10 @@ $authEnabled        = false;                        // uses the google translate
 $authCredentials    = false;                        // if auth is enabled, the api key is held here
 $appendOnly         = false;                        // only add new keys 
 
+// application caches
 $jsonOutput         = array();                      // the output
 $jsonOutputProps    = null;                         // the output properties
-
-$timeStart         = microtime(true); 
+$timeStart          = microtime(true);              // cache the time so we can provide some performance output
 
 // cli options
 if (sizeof($argv) > 1) {
@@ -138,9 +139,9 @@ if (!$seedLanguage) {
 }
 
 // did any target languages get set?
-if (!$targetLanguages || sizeof($targetLanguages) === 0) {
-    print ("No target languages were defined.\n");
-    exit(0);
+if (sizeof($targetLanguages) === 0) {
+    print ("No target languages were defined. Only the original keys will be written.\n");
+    //exit(0);
 }
 
 // check the source template exists
@@ -261,8 +262,9 @@ if (array_key_exists($seedLanguage, $json)) {
     // get the strings in the source language we want to translate
     $seedStrings = $json[$seedLanguage];
 
+    //
     // place the target strings into the output object
-    array_unshift($targetLanguages, $seedLanguage);
+    array_unshift($targetLanguages, $seedLanguage);    
 
     // loop over each target language, hit the translation API
     foreach ($targetLanguages as $lang) {
