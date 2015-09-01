@@ -28,5 +28,17 @@ class Utils {
         return $string;
     }
 
+
+
+    /**
+     * removes markup and whitespace from the translated string
+     * 
+     * @param  [type] $string [description]
+     * @return [type]         [description]
+     */
+    public static function processString ($string) {
+
+        return trim(strip_tags($string, '<a><strong><em>'));
+    }
 }
 ?>

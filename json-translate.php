@@ -313,7 +313,7 @@ if (array_key_exists($seedLanguage, $json)) {
                     // if the target language is the same as the translation language, simply write it back into the object
                     if ($seedLanguage === $lang) {
 
-                        $translated = strip_tags(Utils::isolateIgnored($value));
+                        $translated = Utils::processString(Utils::isolateIgnored($value));
                         
                     } else {
 

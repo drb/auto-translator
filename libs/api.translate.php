@@ -47,17 +47,6 @@ class GoogleTranslateClient {
     }
 
 
-    /**
-     * removes markup and whitespace from the translated string
-     * 
-     * @param  [type] $string [description]
-     * @return [type]         [description]
-     */
-    private function processString ($string) {
-
-        return trim(strip_tags($string));
-    }
-
 
     /**
      * calls the api 
@@ -110,7 +99,7 @@ class GoogleTranslateClient {
             $translated = $string;
         }
 
-        return $this->processString($translated);
+        return Utils::processString($translated);
     }
 }
 ?>
