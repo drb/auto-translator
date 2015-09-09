@@ -199,18 +199,33 @@ if (sizeof($includes) > 0) {
 
         // does it exist?
         if (file_exists($path)) {
+
             // put it on the output
             $includeContent = file_get_contents($path);
 
+            $jsonValid = Utils::validateJSON($includeContent);
+
+            if ($jsonValid !== true) {
+               print(sprintf("Include file %s contains syntax errors. Cannot continue.\n", $path, $jsonValid));
+               exit(0);
+            }
+
             // de-json the content (we only want the keys)
             $includeContent = trim($includeContent, "{}");
+
+            // the includes should be valid json, so stick a trailing comma on the end so that the keys still work
+            // when we inject them
+            if (substr($includeContent, -1) !== ',' && sizeof($includeContent) > 0) {
+                $includeContent .= ",";
+            }
 
             // update the base content with the content from the include
             $string = str_replace($markup, $includeContent, $string);
         } else {
 
             // throw exception when the include is missing
-            throw new Exception(sprintf("Missing include file found at %s", $path));
+            print(sprintf("Missing include file found at %s\n", $path));
+            exit(0);
         }
     }
 }
@@ -225,7 +240,9 @@ $string = preg_replace('!\s+!', ' ', $string);
 $string = preg_replace("/([,])+/", "\\1", $string);
 
 // replace any lines terminated with commas when the property is the last one in the object
-$string = str_replace(", }", " }", $string);
+while (preg_match("/,\s+\}/", $string)) {
+    $string = preg_replace("/,\s+\}/", " }", $string);    
+}
 
 // parse the json
 $json   = json_decode($string, true);
@@ -262,7 +279,6 @@ if (array_key_exists($seedLanguage, $json)) {
     // get the strings in the source language we want to translate
     $seedStrings = $json[$seedLanguage];
 
-    //
     // place the target strings into the output object
     array_unshift($targetLanguages, $seedLanguage);    
 
@@ -347,7 +363,6 @@ if (array_key_exists($seedLanguage, $json)) {
         if ($verbose) {
             print(sprintf("Finished converting [%s resources] %s > %s\n", sizeof($seedStrings), strtoupper($seedLanguage), strtoupper($lang)));
         }
-
     }
 
     // expand the flat keys into sub arrays if required
@@ -358,7 +373,6 @@ if (array_key_exists($seedLanguage, $json)) {
             $jsonOutput[$lang] = DotNotation::expand($jsonOutput[$lang]);
         }
     }
-
 
 } else {
     print(sprintf("There is no key set for %s in the source JSON.\n", $seedLanguage));

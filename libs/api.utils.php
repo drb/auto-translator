@@ -3,7 +3,7 @@
 class Utils {
     
     /**
-     * [isolateIgnored description]
+     * isolateIgnored
      *
      * finds any strings wrapped in $() tags - these should be ignored by the service
      *
@@ -31,6 +31,8 @@ class Utils {
 
 
     /**
+     * processString
+     * 
      * removes markup and whitespace from the translated string
      * 
      * @param  [type] $string [description]
@@ -39,6 +41,35 @@ class Utils {
     public static function processString ($string) {
 
         return trim(strip_tags($string, '<a><strong><em>'));
+    }
+
+
+    /**
+     * validateJSON
+     *
+     * does a quick parse and catches the json errors if invlaid
+     * returns true if valid
+     * 
+     * @param  [type] $json [description]
+     * @return [type]       [description]
+     */
+    public static function validateJSON ($string) {
+
+        // parse the json
+        $json = json_decode($string, true);
+
+        // trap error when parsing the json
+        switch (json_last_error()) {
+            case JSON_ERROR_DEPTH:
+            case JSON_ERROR_STATE_MISMATCH:
+            case JSON_ERROR_CTRL_CHAR:
+            case JSON_ERROR_SYNTAX:
+            case JSON_ERROR_UTF8:
+                return json_last_error_msg();
+            break;
+        }
+
+        return true;
     }
 }
 ?>
