@@ -5,6 +5,9 @@
  * The project started as a tiny procedural script & quickly got big!
  */
 
+// all errors
+error_reporting(E_ALL);
+
 // the source documents can get a bit big, so we allow a property _comment to comment the structure
 // but we don't want this in the output, so they are removed.
 define ('JSON_COMMENT',     '_comment');
@@ -215,8 +218,14 @@ if (sizeof($includes) > 0) {
 
             // the includes should be valid json, so stick a trailing comma on the end so that the keys still work
             // when we inject them
-            if (substr($includeContent, -1) !== ',' && sizeof($includeContent) > 0) {
+            // if (strlen(trim($includeContent, ",")) === 0) {
+            //     $includeContent = "";
+            if (substr($includeContent, -1) !== ',') {
                 $includeContent .= ",";
+            }
+
+            if (strlen(trim(trim($includeContent, ","))) === 0) {
+                $includeContent = "";
             }
 
             // update the base content with the content from the include
@@ -243,6 +252,8 @@ $string = preg_replace("/([,])+/", "\\1", $string);
 while (preg_match("/,\s+\}/", $string)) {
     $string = preg_replace("/,\s+\}/", " }", $string);    
 }
+
+// print ($string);
 
 // parse the json
 $json   = json_decode($string, true);

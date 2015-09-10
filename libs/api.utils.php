@@ -25,6 +25,29 @@ class Utils {
             }
         }
 
+        return self::isolateTokens($string);
+    }
+
+
+    /**
+     * isolateTokens
+     *
+     * protects any tokens found in the resources i.e. this is a sentence about a company called %[companyName].
+     * 
+     * @param  [type] $string [description]
+     * @return [type]         [description]
+     */
+    public static function isolateTokens ($string) {
+
+        preg_match_all('/\%\[(.*?)\]/', $string, $matches, PREG_SET_ORDER);
+
+        if ($matches && !empty($matches) && !empty($matches[0])) {
+
+            foreach ($matches as $key => $value) {
+                $string = str_replace($value[0], "<span class='notranslate'>" . $value[0] . "</span>", $string);
+            }
+        }
+
         return $string;
     }
 
@@ -33,14 +56,41 @@ class Utils {
     /**
      * processString
      * 
-     * removes markup and whitespace from the translated string
+     * removes markup, multiple spaces and whitespace from the translated string. also tries to preserve tokenised
+     * strings that may have got mangled
      * 
      * @param  [type] $string [description]
      * @return [type]         [description]
      */
     public static function processString ($string) {
 
+        $string = self::fixTokenised($string);
+
         return trim(strip_tags($string, '<a><strong><em>'));
+    }
+
+
+     /**
+     * fixTokenised
+     * 
+     * attempts to fix instances where the translation API has mangled the tokenised strings - they shuold look like
+     * %[this.is.a.string] but can end up like % [this.is.a.string ]
+     * 
+     * @param  [type] $string [description]
+     * @return [type]         [description]
+     */
+    public static function fixTokenised ($string) {
+
+        preg_match_all('/\%(\s+)?\[(.*?)\]/', $string, $matches, PREG_SET_ORDER);
+
+        if ($matches && !empty($matches) && !empty($matches[0])) {
+
+            foreach ($matches as $key => $value) {
+                $string = str_replace($value[0], trim(preg_replace('!\s+!', '', $value[0])), $string);
+            }
+        }
+
+        return $string;
     }
 
 

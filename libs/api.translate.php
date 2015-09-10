@@ -56,6 +56,8 @@ class GoogleTranslateClient {
      */
     private function call ($string) {
 
+        // return Utils::fixTokenised(Utils::processString("test %[tokenised.string.hete] and %     [weird.broken.string]"));
+
         $params = array(
             'q' => $string,
             'source' => $this->source,
