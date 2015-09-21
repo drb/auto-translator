@@ -95,6 +95,22 @@ class Utils {
 
 
     /**
+     * parseJSON
+     * 
+     * @param  [type] $string [description]
+     * @return [type]         [description]
+     */
+    public static function parseJSON ($string) {
+
+        // parse the json
+        $json = json_decode($string, true);
+
+        // return, despite errors
+        return $json;
+    }
+
+
+    /**
      * validateJSON
      *
      * does a quick parse and catches the json errors if invlaid
@@ -106,7 +122,7 @@ class Utils {
     public static function validateJSON ($string) {
 
         // parse the json
-        $json = json_decode($string, true);
+        self::parseJSON($string);
 
         // trap error when parsing the json
         switch (json_last_error()) {

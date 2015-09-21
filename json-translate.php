@@ -35,6 +35,7 @@ $output             = false;                        // the output file once all 
 $seedLanguage       = false;                        // the seed language denoted by two-character ISO 3166-1 alpha-2 code
 $targetLanguages    = array();                      // the languages we need denoted by two-character ISO 3166-1 alpha-2 codes (split by commas)
 $options            = false;                        // parsed options coming from the CLI
+$cache              = array();
 
 // cli options
 $expandNamespace    = false;                        // creates nested objects in the JSON, using dot syntax to denote nesting
@@ -43,7 +44,7 @@ $stripComments      = true;                         // remove any custom comment
 $enforceUpperFirst  = true;                         // attempt to enforce upper case letters first when the original text has upper
 $authEnabled        = false;                        // uses the google translate API directly using a real API key - key needs to bet set in file creds.ini 
 $authCredentials    = false;                        // if auth is enabled, the api key is held here
-$appendOnly         = false;                        // only add new keys 
+$ignoreCache        = false;                        // wipes the cache and requests all keys again
 
 // application caches
 $jsonOutput         = array();                      // the output
@@ -119,8 +120,9 @@ if (sizeof($argv) > 1) {
         $authEnabled = true;
     }
 
+    // ignores the local cache and fetchs all strings from the API again
     if (array_key_exists('u', $options)) {
-        $appendOnly = true;
+        $ignoreCache = true;
     }
 }
 
@@ -308,7 +310,8 @@ if (array_key_exists($seedLanguage, $json)) {
             $tr = new GoogleTranslateClient(
                 $authCredentials['google_api']['key'],
                 $seedLanguage,
-                $lang
+                $lang,
+                $ignoreCache
             );
         }
         
@@ -345,7 +348,7 @@ if (array_key_exists($seedLanguage, $json)) {
                     } else {
 
                         // hit the api - the string should be translated
-                        $translated = $tr->translate($value);
+                        $translated = $tr->setKey($stringKey)->translate($value);
 
                         // ensure that the translated string observes the source string's capitalisation,
                         // if that is the case
@@ -384,6 +387,9 @@ if (array_key_exists($seedLanguage, $json)) {
             $jsonOutput[$lang] = DotNotation::expand($jsonOutput[$lang]);
         }
     }
+
+    // save to cache
+    $tr->save();
 
 } else {
     print(sprintf("There is no key set for %s in the source JSON.\n", $seedLanguage));

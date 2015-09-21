@@ -6,6 +6,8 @@
 
 require_once('libs/api.utils.php');
 
+define ('CACHE_PATH', 'cache.tmp');
+
 class GoogleTranslateClient {
 
     private $url = 'https://www.googleapis.com/language/translate/v2';
@@ -13,6 +15,9 @@ class GoogleTranslateClient {
     private $source;
     private $target;
     private $key;
+    private $resourceKey;
+    private $useCache = true;
+    private $cacheDict = array();
     private $preferredEncoding = 'utf-8';  
 
 
@@ -23,11 +28,27 @@ class GoogleTranslateClient {
      * @param [type] $seedLanguage   [description]
      * @param [type] $targetLanguage [description]
      */
-    public function __construct($key, $seedLanguage, $targetLanguage) {
+    public function __construct($key, $seedLanguage, $targetLanguage, $ignoreCache=false) {
         
         $this->source = $seedLanguage;
         $this->target = $targetLanguage;
         $this->key = $key;
+
+        // 
+        $this->useCache = !$ignoreCache;
+
+        if ($this->useCache) {
+            //
+            if (file_exists(CACHE_PATH)) {
+
+                // cache dictionary
+                $contents = file_get_contents(CACHE_PATH);  
+
+                if (strlen($contents) > 0) {
+                    $this->cacheDict = Utils::parseJSON($contents);    
+                }
+            }
+        }
     }
 
 
@@ -47,6 +68,19 @@ class GoogleTranslateClient {
     }
 
 
+    /**
+    * sets the key this string will be logged against for internal cache 
+    * 
+    * @param [type] $keyId [description]
+    */
+    public function setKey ($keyId) {
+
+        $this->resourceKey = $keyId;
+
+        return $this;
+    }
+
+
 
     /**
      * calls the api 
@@ -56,7 +90,27 @@ class GoogleTranslateClient {
      */
     private function call ($string) {
 
-        // return Utils::fixTokenised(Utils::processString("test %[tokenised.string.hete] and %     [weird.broken.string]"));
+        $stringHash = md5($string);
+
+        if ($this->useCache) {
+
+            if (array_key_exists($this->source, $this->cacheDict)) {
+
+                if (array_key_exists($this->resourceKey, $this->cacheDict[$this->source]) && $this->cacheDict[$this->source][$this->resourceKey]['hash'] == $stringHash) {
+
+                    if (array_key_exists($this->target, $this->cacheDict[$this->source][$this->resourceKey])) {
+
+                        if ($this->cacheDict[$this->source][$this->resourceKey][$this->target]) {
+
+                            return "ass";
+                        }
+                    }
+
+                }
+            }
+        }
+
+        //return Utils::fixTokenised(Utils::processString("test %[tokenised.string.hete] and %     [weird.broken.string]"));
 
         $params = array(
             'q' => $string,
@@ -91,6 +145,26 @@ class GoogleTranslateClient {
             // get the goods
             $translated = $translated['data']['translations'][0]['translatedText'];
 
+            if ($this->useCache) {
+
+                if (!array_key_exists($this->resourceKey, $this->cacheDict)) {
+
+                    $this->cacheDict[$this->resourceKey] = array();
+                }
+
+                $this->cacheDict[$this->resourceKey] = array(
+                    'hash'=>$stringHash,
+                    'en'=>$string
+                );
+
+                // if (!array_key_exists($this->target, $this->cacheDict[$this->source][$this->resourceKey])) {
+
+                //     $this->cacheDict[$this->source][$this->resourceKey][$this->target] = array();
+                // }
+                
+                //$this->cacheDict[$this->source][$this->resourceKey][$this->target] = $translated;
+            }
+
         } else {
 
             // fail
@@ -102,6 +176,25 @@ class GoogleTranslateClient {
         }
 
         return Utils::processString($translated);
+    }
+
+
+    /**
+     * [save description]
+     * 
+     * @return [type] [description]
+     */
+    public function save () {
+
+        if ($this->useCache) {
+            try {
+                $fp = fopen(CACHE_PATH, 'w');
+                fwrite($fp, json_encode($this->cacheDict, JSON_PRETTY_PRINT));
+                fclose($fp);
+            } catch (Exception $e) {
+                echo (sprintf('Error writing cacheDict file %s. Error found: %s', $output, $e->getMessage()));
+            }
+        }
     }
 }
 ?>
