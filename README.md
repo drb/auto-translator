@@ -129,6 +129,12 @@ Put any includes in the `includes` directory (you will have to create this), the
 }
 ```
 
+### Caching
+
+Previous requests can be cached to disk so that unchanged resourced aren't unnecessarily sent up to the API every time. Use the -u flag.
+
+_NOTE: The file is written to `cache.tmp` so appropriate permissions are required to allow file writes._
+
 
 ### Options
 
@@ -142,6 +148,7 @@ Put any includes in the `includes` directory (you will have to create this), the
 -p          Pretty-print the JSON output (for readability).
 -c          Don't remove _comment properties from the source data.
 -a          Use the Google Translate API with an active key (requires [credentials setting up](#credentials))
+-u          Use caching - advised. Won't hit the API when we already have a cached version of the original string.
 ```
 
 ### Installation:
