@@ -372,10 +372,19 @@ if (array_key_exists($seedLanguage, $json)) {
             } catch (Exception $e) {
                 echo (sprintf('Failed to get translation: %s', $e->getMessage()));
             }
+
+            // save to cache
+            $tr->save();
         }
 
         if ($verbose) {
-            print(sprintf("Finished converting [%s resources] %s > %s\n", sizeof($seedStrings), strtoupper($seedLanguage), strtoupper($lang)));
+
+            if ($lang != $seedLanguage) {
+                // prints the stats to the console
+                $tr->printStats(sizeof($seedStrings));    
+            } else {
+                print(sprintf("Finished copying %s %s resource strings.\n", sizeof($seedStrings), strtoupper($seedLanguage)));
+            }
         }
     }
 
@@ -387,9 +396,6 @@ if (array_key_exists($seedLanguage, $json)) {
             $jsonOutput[$lang] = DotNotation::expand($jsonOutput[$lang]);
         }
     }
-
-    // save to cache
-    $tr->save();
 
 } else {
     print(sprintf("There is no key set for %s in the source JSON.\n", $seedLanguage));
