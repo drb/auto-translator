@@ -181,8 +181,8 @@ class GoogleTranslateClient {
                     $this->cacheDict[$this->resourceKey]['hash'] = $stringHash;
                     $this->cacheDict[$this->resourceKey]['en'] = $string;
 
-                    // add to the translated key
-                    $this->cacheDict[$this->resourceKey][$this->target] = $translated;
+                    // add to the translated key (sanitise first)
+                    $this->cacheDict[$this->resourceKey][$this->target] = Utils::processString($translated);
                 }
 
             } else {
