@@ -6,7 +6,6 @@
 
 require_once('libs/api.utils.php');
 
-define ('CACHE_PATH', 'cache.tmp');
 
 class GoogleTranslateClient {
 
@@ -17,9 +16,11 @@ class GoogleTranslateClient {
     private $key;
     private $resourceKey;
     private $useCache = true;
+    private $cachePath;
     private $cacheDict = array();
     private $preferredEncoding = 'utf-8';  
 
+    // basic statistics for output in verbose mode
     private $stats = array(
         'total'=>0,
         'new'=>0,
@@ -34,21 +35,22 @@ class GoogleTranslateClient {
      * @param [type] $seedLanguage   [description]
      * @param [type] $targetLanguage [description]
      */
-    public function __construct($key, $seedLanguage, $targetLanguage, $ignoreCache=false) {
+    public function __construct($key, $seedLanguage, $targetLanguage, $cachePath) {
         
         $this->source = $seedLanguage;
         $this->target = $targetLanguage;
         $this->key = $key;
+        $this->cachePath = $cachePath;
 
-        // 
-        $this->useCache = !$ignoreCache;
+        // set if we're using the cache or not (a path indicate yes, we are)
+        $this->useCache = ($cachePath != false);
 
         if ($this->useCache) {
             //
-            if (file_exists(CACHE_PATH)) {
+            if (file_exists($this->cachePath)) {
 
                 // cache dictionary
-                $contents = file_get_contents(CACHE_PATH);  
+                $contents = file_get_contents($this->cachePath);  
 
                 if (strlen($contents) > 0) {
 
@@ -211,11 +213,11 @@ class GoogleTranslateClient {
 
         if ($this->useCache) {
             try {
-                $fp = fopen(CACHE_PATH, 'w');
+                $fp = fopen($this->cachePath, 'w');
                 fwrite($fp, json_encode($this->cacheDict, JSON_PRETTY_PRINT));
                 fclose($fp);
             } catch (Exception $e) {
-                echo (sprintf('Error writing cacheDict file %s. Error found: %s', $output, $e->getMessage()));
+                print (sprintf("Error writing cacheDict file %s. Error found: %s\n", $output, $e->getMessage()));
             }
         }
     }

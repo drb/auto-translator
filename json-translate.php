@@ -14,6 +14,7 @@ define ('JSON_COMMENT',     '_comment');
 define ('JSON_INCLUDE',     '_include');
 define ('INI_PATH',         'creds.ini');
 define ('INCLUDES_PATH',    'includes/');
+define ('CACHE_PATH',       'cache.tmp');
 
 // set encoding type to utf-8 by default
 mb_internal_encoding("UTF-8");
@@ -35,7 +36,6 @@ $output             = false;                        // the output file once all 
 $seedLanguage       = false;                        // the seed language denoted by two-character ISO 3166-1 alpha-2 code
 $targetLanguages    = array();                      // the languages we need denoted by two-character ISO 3166-1 alpha-2 codes (split by commas)
 $options            = false;                        // parsed options coming from the CLI
-$cache              = array();
 
 // cli options
 $expandNamespace    = false;                        // creates nested objects in the JSON, using dot syntax to denote nesting
@@ -44,7 +44,8 @@ $stripComments      = true;                         // remove any custom comment
 $enforceUpperFirst  = true;                         // attempt to enforce upper case letters first when the original text has upper
 $authEnabled        = false;                        // uses the google translate API directly using a real API key - key needs to bet set in file creds.ini 
 $authCredentials    = false;                        // if auth is enabled, the api key is held here
-$ignoreCache        = false;                        // wipes the cache and requests all keys again
+$cachePath          = CACHE_PATH;                   // default cache path for storing previous requests
+$ignoreCache        = false;
 
 // application caches
 $jsonOutput         = array();                      // the output
@@ -69,7 +70,10 @@ if (sizeof($argv) > 1) {
     // output path -o
     $opts .= 'o:';
 
-    // optional params (-p pretty print, -v verbose, -e expand namespaces)
+    // cache path -z
+    $opts .= 'z:';
+
+    // optional params (-p pretty print, -v verbose, -e expand namespaces -z cache path)
     $opts .= 'pvecau';
 
     // parse the options
@@ -100,6 +104,11 @@ if (sizeof($argv) > 1) {
         $expandNamespace = true;
     }
 
+    // set the cache path
+    if (array_key_exists('z', $options)) {
+        $cachePath = $options['z'];
+    }
+
     // print output to console
     if (array_key_exists('v', $options)) {
         $verbose = true;
@@ -115,7 +124,7 @@ if (sizeof($argv) > 1) {
         $stripComments = false;
     }
 
-    //
+    // loads credentials from the creds.ini
     if (array_key_exists('a', $options)) {
         $authEnabled = true;
     }
@@ -123,6 +132,7 @@ if (sizeof($argv) > 1) {
     // ignores the local cache and fetchs all strings from the API again
     if (array_key_exists('u', $options)) {
         $ignoreCache = true;
+        $cachePath = false;
     }
 }
 
@@ -272,6 +282,7 @@ switch (json_last_error()) {
     break;
 }
 
+
 // only continue if the seed langauge exists
 if (array_key_exists($seedLanguage, $json)) {
 
@@ -311,7 +322,7 @@ if (array_key_exists($seedLanguage, $json)) {
                 $authCredentials['google_api']['key'],
                 $seedLanguage,
                 $lang,
-                $ignoreCache
+                ($ignoreCache ? false : $cachePath)
             );
         }
         

@@ -129,11 +129,30 @@ Put any includes in the `includes` directory (you will have to create this), the
 }
 ```
 
+### Credentials
+
+If the -a flag is passed, the script will use Google's offical API endpoint. This requires an active, valid API key to work.
+
+* Create an account with Google on the Google Cloud Platform and enable the Translate API
+* Create and keep note of an API key
+* Create file in the same directory as the cloned out project called `creds.ini`
+* Add the following to the file:
+
+```
+[google_api]
+key = YOUR_KEY_HERE
+```
+
 ### Caching
 
-Previous requests can be cached to disk so that unchanged resourced aren't unnecessarily sent up to the API every time. Use the -u flag.
+Previous requests can be cached to disk so that unchanged resourced aren't unnecessarily sent up to the API every time. Use the `-z` flag to specify a path to write the cache file to.
 
 _NOTE: The file is written to `cache.tmp` so appropriate permissions are required to allow file writes._
+
+
+### Turn off automatic caching
+
+To turn off all caching, use the `-u` flag.
 
 
 ### Options
@@ -148,7 +167,8 @@ _NOTE: The file is written to `cache.tmp` so appropriate permissions are require
 -p          Pretty-print the JSON output (for readability).
 -c          Don't remove _comment properties from the source data.
 -a          Use the Google Translate API with an active key (requires [credentials setting up](#credentials))
--u          Use caching - advised. Won't hit the API when we already have a cached version of the original string.
+-z          Set the cache path and use request caching - advised. Won't hit the API when we already have a cached version of the original string.
+-u          Don't use any caching     
 ```
 
 ### Installation:
@@ -156,7 +176,7 @@ _NOTE: The file is written to `cache.tmp` so appropriate permissions are require
 * Clone the repo out
 * Run `composer install`
 * Define your keys that require translation in template.json
-* Run `php json-translate.php -i <source.json> -o <output.json> -s <source language> -l <target languages> -v`
+* Run `php json-translate.php -i <source.json> -o <output.json> -s <source_language> -l <target_languages> -v`
 * e.g. `php json-translate.php -i template.json -o output.json -s en -l fr,de -v`
 
 Using the above example, the input is taken from template.json, the English strings are translated to French and German, then the output is written to `output.json` and the console.
@@ -231,20 +251,6 @@ List mirrored from the official [Google Translate API Docs](https://cloud.google
 | Vietnamese | vi |
 | Welsh |cy |
 | Yiddish | yi |
-
-### Credentials
-
-If the -a flag is passed, the script will use Google's offical API endpoint. This requires an active, valid API key to work.
-
-* Create an account with Google on the Google Cloud Platform and enable the Translate API
-* Create and keep note of an API key
-* Create file in the same directory as the cloned out project called `creds.ini`
-* Add the following to the file:
-
-```
-[google_api]
-key = YOUR_KEY_HERE
-```
 
 
 
