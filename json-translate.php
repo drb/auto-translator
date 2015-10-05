@@ -15,6 +15,7 @@ define ('JSON_INCLUDE',     '_include');
 define ('INI_PATH',         'creds.ini');
 define ('INCLUDES_PATH',    'includes/');
 define ('CACHE_PATH',       'cache.tmp');
+define ('SPLIT_OUTPUT',     'split');
 
 // set encoding type to utf-8 by default
 mb_internal_encoding("UTF-8");
@@ -33,6 +34,7 @@ use Stichoza\GoogleTranslate\TranslateClient;       // https://github.com/Sticho
 //base variables
 $template           = false;                        // the source file to get all translations from
 $output             = false;                        // the output file once all translations are done
+$splitOutput        = false;                        // split each output file to a separate file
 $seedLanguage       = false;                        // the seed language denoted by two-character ISO 3166-1 alpha-2 code
 $targetLanguages    = array();                      // the languages we need denoted by two-character ISO 3166-1 alpha-2 codes (split by commas)
 $options            = false;                        // parsed options coming from the CLI
@@ -44,8 +46,10 @@ $stripComments      = true;                         // remove any custom comment
 $enforceUpperFirst  = true;                         // attempt to enforce upper case letters first when the original text has upper
 $authEnabled        = false;                        // uses the google translate API directly using a real API key - key needs to bet set in file creds.ini 
 $authCredentials    = false;                        // if auth is enabled, the api key is held here
+$ignoreCache        = false;                        // don't use the cache
+
+// caching options
 $cachePath          = CACHE_PATH;                   // default cache path for storing previous requests
-$ignoreCache        = false;
 
 // application caches
 $jsonOutput         = array();                      // the output
@@ -73,8 +77,8 @@ if (sizeof($argv) > 1) {
     // cache path -z
     $opts .= 'z:';
 
-    // optional params (-p pretty print, -v verbose, -e expand namespaces -z cache path)
-    $opts .= 'pvecau';
+    // optional params (-p pretty print, -v verbose, -e expand namespaces, -z cache path, -d output each locale to own file)
+    $opts .= 'pvecaud';
 
     // parse the options
     $options = getopt($opts);
@@ -87,6 +91,11 @@ if (sizeof($argv) > 1) {
     // get the output json
     if (array_key_exists('o', $options)) {
         $output = $options['o'];
+    }
+
+    // split each output language to separate file
+    if (array_key_exists('d', $options)) {
+        $splitOutput = true;
     }
 
     // re-assign the seed language
@@ -128,12 +137,6 @@ if (sizeof($argv) > 1) {
     if (array_key_exists('a', $options)) {
         $authEnabled = true;
     }
-
-    // ignores the local cache and fetchs all strings from the API again
-    if (array_key_exists('u', $options)) {
-        $ignoreCache = true;
-        $cachePath = false;
-    }
 }
 
 // check in/out params
@@ -143,8 +146,27 @@ if (!$template || !$output) {
 }
 
 if ($template === $output) {
-    print ("Output is the same file as input - this is a bad idea.\n");
+    print ("Output is the same file as input - this is a bad idea ;)\n");
     exit(0);
+}
+
+// ensure the output is a directory
+if ($splitOutput) {
+
+    if (!file_exists($output)) {
+        print ("When specifying split output files, the directory specified must exist.\n");
+        exit(0);
+    }
+
+    if (!is_dir($output)) {
+        print ("When specifying split output files, the -o flag must represent a directory.\n");
+        exit(0);
+    }
+
+    if (!is_writable($output)) {
+        print ("When specifying split output files, the directory specified must be writable!\n");
+        exit(0);
+    }
 }
 
 // check params
@@ -415,9 +437,29 @@ if (array_key_exists($seedLanguage, $json)) {
 
 // write the translated JSON back to disk
 try {
-    $fp = fopen($output, 'w');
-    fwrite($fp, json_encode($jsonOutput, $jsonOutputProps));
-    fclose($fp);
+
+    // dump all files to single files
+    if (!$splitOutput) {
+
+        Utils::writeJSON($output, $jsonOutput, $jsonOutputProps);
+    } else {
+        
+        // dump each language out to own file
+        foreach ($targetLanguages as $lang) {
+
+            // set path - file should be called <lang>.json
+            $path = $output . '/' . strtolower($lang) . '.json';
+
+            // normalise path
+            while( strpos($path, '//') !== false ) {
+               $path = str_replace('//','/',$path);
+            }
+
+            // write file to disk
+            Utils::writeJSON($path, $jsonOutput[$lang], $jsonOutputProps);
+        }
+    }
+    
 } catch (Exception $e) {
     echo (sprintf('Error writing output file %s. Error found: %s', $output, $e->getMessage()));
 }

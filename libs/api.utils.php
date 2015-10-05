@@ -137,5 +137,34 @@ class Utils {
 
         return true;
     }
+
+
+
+    /**
+     * writeJSON
+     *
+     * outputs JSON to the specified path
+     * 
+     * @param  [type]  $json       [description]
+     * @param  [type]  $path       [description]
+     * @param  boolean $formatting [description]
+     * @return [type]              [description]
+     */
+    public static function writeJSON ($path, $json, $formatting=false) {
+
+        if (is_array($json)) {
+            $json = json_encode($json, $formatting);
+        }
+
+        // @todo validate the JSON before writing?
+        try {
+            $fp = fopen($path, 'w');
+            fwrite($fp, $json);
+            fclose($fp);
+        } catch (Exception $e) {
+            throw $e->getMessage();
+        }
+        
+    }
 }
 ?>

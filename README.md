@@ -160,6 +160,7 @@ To turn off all caching, use the `-u` flag.
 ```
 -i          Input file (JSON).
 -o          Output file path.
+-d          Split each output file into own JSON document. When this is set, the path set by -o must be a writable directory.
 -s          Source language (using 2 letter ISO_639-1 code).
 -l          Target languages. Specify multiple by separating with commas.
 -v          Verbose mode (prints output to screen).

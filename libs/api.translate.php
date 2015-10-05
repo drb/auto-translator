@@ -106,6 +106,10 @@ class GoogleTranslateClient {
 
         if ($this->useCache) {
 
+            if (!is_array($this->cacheDict)) {
+                throw 'Cache file is unreadable. Delete ' . $this->cachePath . '.';
+            }
+
             if (array_key_exists($this->resourceKey, $this->cacheDict)) {
 
                 if (array_key_exists($this->target, $this->cacheDict[$this->resourceKey])) {
@@ -213,9 +217,9 @@ class GoogleTranslateClient {
 
         if ($this->useCache) {
             try {
-                $fp = fopen($this->cachePath, 'w');
-                fwrite($fp, json_encode($this->cacheDict, JSON_PRETTY_PRINT));
-                fclose($fp);
+                // print $this->cachePath;
+                // print_r($this->cacheDict);
+                Utils::writeJSON($this->cachePath, $this->cacheDict, JSON_PRETTY_PRINT);
             } catch (Exception $e) {
                 print (sprintf("Error writing cacheDict file %s. Error found: %s\n", $output, $e->getMessage()));
             }
