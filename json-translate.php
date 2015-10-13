@@ -450,13 +450,17 @@ try {
             // set path - file should be called <lang>.json
             $path = $output . '/' . strtolower($lang) . '.json';
 
+            // write the data within a key corresponding to the locale
+            $contents = array();
+            $contents[$lang] = $jsonOutput[$lang];
+
             // normalise path
             while( strpos($path, '//') !== false ) {
                $path = str_replace('//','/',$path);
             }
 
             // write file to disk
-            Utils::writeJSON($path, $jsonOutput[$lang], $jsonOutputProps);
+            Utils::writeJSON($path, $contents, $jsonOutputProps);
         }
     }
     
