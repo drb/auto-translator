@@ -107,7 +107,7 @@ class GoogleTranslateClient {
         if ($this->useCache) {
 
             if (!is_array($this->cacheDict)) {
-                throw 'Cache file is unreadable. Delete ' . $this->cachePath . '.';
+                throw 'Cache file is unreadable. Delete ' . $this->cachePath . ' before trying again.';
             }
 
             if (array_key_exists($this->resourceKey, $this->cacheDict)) {
@@ -145,7 +145,7 @@ class GoogleTranslateClient {
                 'source' => $this->source,
                 'target' => $this->target,
                 'key' => $this->key,
-                'format' => 'text'
+                'format' => 'html'
             );
 
             $curl = curl_init();
@@ -217,8 +217,6 @@ class GoogleTranslateClient {
 
         if ($this->useCache) {
             try {
-                // print $this->cachePath;
-                // print_r($this->cacheDict);
                 Utils::writeJSON($this->cachePath, $this->cacheDict, JSON_PRETTY_PRINT);
             } catch (Exception $e) {
                 print (sprintf("Error writing cacheDict file %s. Error found: %s\n", $output, $e->getMessage()));

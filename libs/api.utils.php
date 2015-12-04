@@ -21,7 +21,7 @@ class Utils {
         if ($matches && !empty($matches) && !empty($matches[0])) {
 
             foreach ($matches as $key => $value) {
-                $string = str_replace($value[0], "<span class='notranslate'>" . $value[1] . "</span>", $string);
+                $string = str_replace($value[0], "<span class=\"notranslate ignore\">" . $value[1] . "</span>", $string);
             }
         }
 
@@ -44,7 +44,7 @@ class Utils {
         if ($matches && !empty($matches) && !empty($matches[0])) {
 
             foreach ($matches as $key => $value) {
-                $string = str_replace($value[0], "<span class='notranslate'>" . $value[0] . "</span>", $string);
+                $string = str_replace($value[0], "<span class=\"notranslate tokenised\">" . $value[0] . "</span>", $string);
             }
         }
 
