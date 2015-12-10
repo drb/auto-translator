@@ -73,7 +73,7 @@ class Utils {
             return mb_convert_encoding($m[1], "UTF-8", "HTML-ENTITIES"); 
         }, $string);
         
-        return $string;
+        return html_entity_decode($string);
     }
 
 
