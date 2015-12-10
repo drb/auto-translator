@@ -59,14 +59,21 @@ class Utils {
      * removes markup, multiple spaces and whitespace from the translated string. also tries to preserve tokenised
      * strings that may have got mangled
      * 
+     * includes fix by @WebDevStu to remove HTML entities that have been introduced by the translation service.
+     * 
      * @param  [type] $string [description]
      * @return [type]         [description]
      */
     public static function processString ($string) {
 
         $string = self::fixTokenised($string);
-
-        return trim(strip_tags($string, '<a><strong><em>'));
+        $string = trim(strip_tags($string, '<a><strong><em>'));
+        
+        $string = preg_replace_callback("/(&#[0-9]+;)/", function ($m) {
+            return mb_convert_encoding($m[1], "UTF-8", "HTML-ENTITIES"); 
+        }, $string);
+        
+        return $string;
     }
 
 
