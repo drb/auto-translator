@@ -44,7 +44,7 @@ $expandNamespace    = false;                        // creates nested objects in
 $verbose            = false;                        // print the output to the console
 $stripComments      = true;                         // remove any custom comments from the source file (default is on)
 $enforceUpperFirst  = true;                         // attempt to enforce upper case letters first when the original text has upper
-$authEnabled        = false;                        // uses the google translate API directly using a real API key - key needs to bet set in file creds.ini 
+$authEnabled        = false;                        // uses the google translate API directly using a real API key - key needs to bet set in file creds.ini
 $authCredentials    = false;                        // if auth is enabled, the api key is held here
 $ignoreCache        = false;                        // don't use the cache
 
@@ -59,7 +59,7 @@ $timeStart          = microtime(true);              // cache the time so we can 
 // cli options
 if (sizeof($argv) > 1) {
 
-    // short options 
+    // short options
     $opts = '';
 
     // seed language -s
@@ -102,7 +102,7 @@ if (sizeof($argv) > 1) {
     if (array_key_exists('s', $options)) {
         $seedLanguage = $options['s'];
     }
-    
+
     // set the target languages
     if (array_key_exists('l', $options)) {
         $targetLanguages = explode(',', $options['l']);
@@ -184,12 +184,12 @@ if (sizeof($targetLanguages) === 0) {
 // check the source template exists
 if (!file_exists($template)) {
     print ("Source file does not exist\n");
-    exit(0);   
+    exit(0);
 }
 
-// auth has been requested 
+// auth has been requested
 if ($authEnabled) {
-    
+
     if (file_exists(INI_PATH)) {
 
         // parse the config file
@@ -199,7 +199,7 @@ if ($authEnabled) {
             // all good
         } else {
             print (sprintf("Key is missing from %s\n", INI_PATH));
-            exit(0);    
+            exit(0);
         }
 
     } else {
@@ -273,6 +273,9 @@ if (sizeof($includes) > 0) {
     }
 }
 
+// remove trailing empty lines
+$string = trim($string);
+
 // normalise the string after injecting any includes
 $string = str_replace(array("\r", "\n"), "", $string);
 
@@ -284,7 +287,7 @@ $string = preg_replace("/([,])+/", "\\1", $string);
 
 // replace any lines terminated with commas when the property is the last one in the object
 while (preg_match("/,\s+\}/", $string)) {
-    $string = preg_replace("/,\s+\}/", " }", $string);    
+    $string = preg_replace("/,\s+\}/", " }", $string);
 }
 
 // print ($string);
@@ -326,7 +329,7 @@ if (array_key_exists($seedLanguage, $json)) {
     $seedStrings = $json[$seedLanguage];
 
     // place the target strings into the output object
-    array_unshift($targetLanguages, $seedLanguage);    
+    array_unshift($targetLanguages, $seedLanguage);
 
     // loop over each target language, hit the translation API
     foreach ($targetLanguages as $lang) {
@@ -347,21 +350,21 @@ if (array_key_exists($seedLanguage, $json)) {
                 ($ignoreCache ? false : $cachePath)
             );
         }
-        
+
         // create a new object if it's not there already
         if (!array_key_exists($lang, $jsonOutput)) {
-            $jsonOutput[$lang] = array();    
+            $jsonOutput[$lang] = array();
         }
 
         // hit each string
         foreach ($seedStrings as $key=>$value) {
 
-            // 
+            //
             $stringKey = $key;
 
             try {
 
-                // test that the string should be translated - we can prevent entire strings from being 
+                // test that the string should be translated - we can prevent entire strings from being
                 // converted by preceding the key with a dollar sign i.e. "$foo": "I should not be translated"
                 if (preg_match('#^\$#i', $key) === 1) {
 
@@ -377,7 +380,7 @@ if (array_key_exists($seedLanguage, $json)) {
                     if ($seedLanguage === $lang) {
 
                         $translated = Utils::processString(Utils::isolateIgnored($value));
-                        
+
                     } else {
 
                         // hit the api - the string should be translated
@@ -400,7 +403,7 @@ if (array_key_exists($seedLanguage, $json)) {
 
                 // re-assign the property value
                 $jsonOutput[$lang][$stringKey] = $translated;
-            
+
             //
             } catch (Exception $e) {
                 echo (sprintf('Failed to get translation: %s', $e->getMessage()));
@@ -414,7 +417,7 @@ if (array_key_exists($seedLanguage, $json)) {
 
             if ($lang != $seedLanguage) {
                 // prints the stats to the console
-                $tr->printStats(sizeof($seedStrings));    
+                $tr->printStats(sizeof($seedStrings));
             } else {
                 print(sprintf("Finished copying %s %s resource strings.\n", sizeof($seedStrings), strtoupper($seedLanguage)));
             }
@@ -443,7 +446,7 @@ try {
 
         Utils::writeJSON($output, $jsonOutput, $jsonOutputProps);
     } else {
-        
+
         // dump each language out to own file
         foreach ($targetLanguages as $lang) {
 
@@ -463,7 +466,7 @@ try {
             Utils::writeJSON($path, $contents, $jsonOutputProps);
         }
     }
-    
+
 } catch (Exception $e) {
     echo (sprintf('Error writing output file %s. Error found: %s', $output, $e->getMessage()));
 }
