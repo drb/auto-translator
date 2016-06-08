@@ -238,7 +238,7 @@ if (sizeof($includes) > 0) {
         if (file_exists($path)) {
 
             // put it on the output
-            $includeContent = file_get_contents($path);
+            $includeContent = trim(file_get_contents($path));
 
             $jsonValid = Utils::validateJSON($includeContent);
 
@@ -290,18 +290,22 @@ while (preg_match("/,\s+\}/", $string)) {
     $string = preg_replace("/,\s+\}/", " }", $string);
 }
 
-// print ($string);
-
 // parse the json
 $json   = json_decode($string, true);
 
 // trap error when parsing the json
 switch (json_last_error()) {
-    case JSON_ERROR_DEPTH:
     case JSON_ERROR_STATE_MISMATCH:
+    case JSON_ERROR_DEPTH:
     case JSON_ERROR_CTRL_CHAR:
     case JSON_ERROR_SYNTAX:
     case JSON_ERROR_UTF8:
+
+        // write the json to a file to investigate later - the parser attempted to read this and failed,
+        // so useful for debugging what is wrong with the includes
+        if ($verbose) {
+            utils::writeJSON('debug.output.json', $string);
+        }
         print(sprintf('Cannot load target JSON document: %s%s', json_last_error_msg(), "\n"));
         exit(0);
     break;
